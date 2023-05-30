@@ -2,39 +2,48 @@ import cv2 as cv
 import numpy as np
 
 
+def draw_rectangle(event, x, y, flags, params):
+    global x_init, y_init, drawing, top_left_pt, bottom_right_pt
 
-def detect_quadrant(event, x, y, flags, param):
-    if event == cv.EVENT_FLAG_LBUTTON:
-        if x > width/2:
-            if y > height/2:
-                point_top_left = (int(width/2), int(height/2))
-                point_bottom_right = (width-1, height-1)
-            else:
-                point_top_left = (int(width/2), 0)
-                point_bottom_right = (width-1, int(height/2))
-        else:
-            if y > height/2:
-                point_top_left = (0, int(height/2))
-                point_bottom_right = (int(width/2), height-1)
-            else:
-                point_top_left = (0, 0)
-                point_bottom_right = (int(width/2), int(height/2))
-        cv.rectangle(img, point_top_left, point_bottom_right, (0, 100, 0), -1)
-        cv.rectangle(img, point_top_left, point_bottom_right,(0,100,0), -1)
+    if event == cv.EVENT_LBUTTONDOWN:
+        drawing = True
+        x_init, y_init = x, y
 
-if __name__=='__main__':
-    width, height = 640, 480
-    img = 255 * np.ones((height, width, 3), dtype=np.uint8)
-    cv.namedWindow('Input window')
-    cv.setMouseCallback('Input window', detect_quadrant)
+    elif event == cv.EVENT_MOUSEMOVE:
+        if drawing:
+            top_left_pt = (min(x_init,x), min(y_init, y))
+            bottom_right_pt = (max(x_init, x), max(y_init, y))
+            img[y_init:y, x_init:x] = 255 - img[y_init:y, x_init:x]
+
+    elif event == cv.EVENT_LBUTTONUP:
+        drawing = False
+        top_left_pt = (min(x_init, x), min(y_init,y))
+        bottom_right_pt = (max(x_init, x), max(y_init, y))
+        img[y_init:y, x_init:x] = 255 - img[y_init:y, x_init:x]
+
+
+if __name__ == '__main__':
+    drawing = False
+    top_left_pt, bottom_right_pt = (-1, -1), (-1,-1)
+
+    cap = cv.VideoCapture(0)
+
+    if not cap.isOpened():
+        raise IOError("Cannot open webcam")
     
+    cv.namedWindow('Webcam')
+    cv.setMouseCallback('webcam', draw_rectangle)
+
     while True:
-        cv.imshow('Input window', img)
-        c = cv.waitKey(10)
+        ret, frame = cap.read()
+        img = cv.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv.INTER_AREA)
+        (x0, y0), (x1,y1) = top_left_pt, bottom_right_pt
+        img[y0:y1, x0:x1] = 255 - img[y0:y1, x0:x1]
+        cv.imshow("Webcam", img)
+
+        c = cv.waitKey(1)
         if c == 27:
             break
-cv.destroyAllWindows()
 
-
-
-
+    cap.release()
+    cv.destroyAllWindows()
