@@ -5,10 +5,9 @@ import numpy as np
 def cartoonize_image(img, ds_factor=4, sketch_mode=False):
     img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     img_gray = cv.medianBlur(img_gray, 7)
-
     edges = cv.Laplacian(img_gray, cv.CV_8U, ksize=5)
     ret, mask = cv.threshold(edges, 100, 255, cv.THRESH_BINARY_INV)
-
+    
     if sketch_mode:
         img_sketch = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
         kernel = np.zeros((3,3), np.uint8)
@@ -27,7 +26,6 @@ def cartoonize_image(img, ds_factor=4, sketch_mode=False):
     dst = np.zeros(img_gray.shape)
     dst = cv.bitwise_and(img_output, img_output, mask=mask)
     return dst
-
 
 if __name__ == '__main__':
     cap = cv.VideoCapture(0)
